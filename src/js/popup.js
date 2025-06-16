@@ -18,6 +18,7 @@ let deleteStorageKeyButton;
 let searchKeyInput;
 let autoNextCheckbox;
 let searchSection;
+let downloadFormatSelect;
 
 // Initialize DOM elements
 function initializeElements() {
@@ -33,6 +34,7 @@ function initializeElements() {
     searchKeyInput = document.getElementById('searchKey');
     autoNextCheckbox = document.getElementById('autoNextCheckbox');
     searchSection = document.querySelector('.search-section');
+    downloadFormatSelect = document.getElementById('downloadFormat');
 }
 
 // Storage Management Functions
@@ -236,22 +238,38 @@ async function handleDownloadButtonClick() {
         return;
     }
 
-    // Convert to text format
-    const textRows = [];
-    for (const key in quizletData) {
-        const data = quizletData[key];
-        textRows.push(data.answer);
-        textRows.push('-------------------'); // Separator between answer and question
-        textRows.push(data.question);
-        textRows.push('==================='); // Separator between different questions
+    const format = downloadFormatSelect.value;
+    let content, mimeType, extension;
+
+    if (format === 'json') {
+        // Convert to JSON format
+        const jsonData = Object.values(quizletData).map(data => ({
+            question: data.question,
+            answer: data.answer
+        }));
+        content = JSON.stringify(jsonData, null, 2);
+        mimeType = 'application/json';
+        extension = 'json';
+    } else {
+        // Convert to text format
+        const textRows = [];
+        for (const key in quizletData) {
+            const data = quizletData[key];
+            textRows.push(data.answer);
+            textRows.push('-------------------'); // Separator between answer and question
+            textRows.push(data.question);
+            textRows.push('==================='); // Separator between different questions
+        }
+        content = textRows.join('\n');
+        mimeType = 'text/plain;charset=utf-8';
+        extension = 'txt';
     }
 
-    const textContent = textRows.join('\n');
-    const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${storageKey}.txt`;
+    a.download = `${storageKey}.${extension}`;
     a.click();
     URL.revokeObjectURL(url);
 }
