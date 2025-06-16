@@ -33,9 +33,9 @@ A Chrome extension that helps you crawl questions and answers from ExamTopics an
 
 The exported text file will have the following format:
 ```
-Question text and choices
--------------------
 Answer
+-------------------
+Question text and choices
 ===================
 
 Next question...

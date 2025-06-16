@@ -213,6 +213,7 @@ async function handleCrawlButtonClick() {
     if (autoNextCheckbox.checked || exists) {
         const searchKey = searchKeyInput.value.trim();
         if (searchKey) {
+            await saveSearchKey(searchKey);
             try {
                 await chrome.tabs.sendMessage(tab.id, { 
                     action: 'nextQuestion',
@@ -239,9 +240,9 @@ async function handleDownloadButtonClick() {
     const textRows = [];
     for (const key in quizletData) {
         const data = quizletData[key];
-        textRows.push(data.question);
-        textRows.push('-------------------'); // Separator between question and answer
         textRows.push(data.answer);
+        textRows.push('-------------------'); // Separator between answer and question
+        textRows.push(data.question);
         textRows.push('==================='); // Separator between different questions
     }
 
