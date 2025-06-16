@@ -5,7 +5,9 @@ const SELECTORS = {
     MULTI_CHOICE_ITEM: '.multi-choice-item',
     MULTI_CHOICE_LETTER: '.multi-choice-letter',
     CORRECT_HIDDEN: '.correct-hidden',
-    QUESTION_HEADER: '.question-discussion-header'
+    QUESTION_HEADER: '.question-discussion-header',
+    SEARCH_INPUT: 'input[type="search"]',
+    NEXT_BUTTON: 'a[href*="next"]'
 };
 
 // Data Management
@@ -95,8 +97,42 @@ function getCurrentQuestion() {
     return questionMatch ? `Question #: ${questionMatch[1]}` : null;
 }
 
+// Next Function
+function goToNextQuestion(searchKey) {
+    console.log('Going to next question with search key:', searchKey);
+    
+    // Get current question number
+    const questionElement = document.querySelector(SELECTORS.QUESTION_HEADER);
+    let nextQuestionNumber = '';
+    
+    if (questionElement) {
+        const questionDiv = questionElement.querySelector('div');
+        if (questionDiv) {
+            const questionText = questionDiv.innerText.trim();
+            const questionMatch = questionText.match(/Question #: (\d+)/);
+            if (questionMatch) {
+                const currentNumber = parseInt(questionMatch[1]);
+                nextQuestionNumber = (currentNumber + 1).toString();
+                console.log('Current question number:', currentNumber);
+                console.log('Next question number:', nextQuestionNumber);
+            }
+        }
+    }
+    
+    if (searchKey) {
+        // Combine search key with next question number
+        const fullSearchKey = nextQuestionNumber ? `${searchKey} ${nextQuestionNumber}` : searchKey;
+        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(fullSearchKey)}`;
+        console.log('Redirecting to:', searchUrl);
+        window.location.href = searchUrl;
+    }
+}
+
 // Message Handler
+console.log('Setting up message listener in content script');
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Content script received message:', request);
+    
     if (request.action === 'getTempData') {
         const quizletData = extractQuizletData();
         if (quizletData) {
@@ -111,11 +147,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === 'getCurrentQuestion') {
         const question = getCurrentQuestion();
         sendResponse({ question });
+    } else if (request.action === 'nextQuestion') {
+        console.log('Handling nextQuestion action');
+        goToNextQuestion(request.searchKey);
+        sendResponse({ success: true });
     }
     return true;
 });
 
+// Log when content script is loaded
+console.log('Content script loaded');
+
 // Initialization
-document.addEventListener('DOMContentLoaded', saveDiscussionLinks);
-saveDiscussionLinks(); // Run immediately in case page is already loaded
-extractQuizletData(); // Initial data extraction 
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded in content script');
+    saveDiscussionLinks();
+    extractQuizletData();
+}); 

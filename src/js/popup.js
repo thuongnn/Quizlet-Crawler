@@ -2,6 +2,8 @@
 const STORAGE_KEYS_LIST = 'storageKeysList';
 const LAST_SELECTED_KEY = 'lastSelectedStorageKey';
 const DEFAULT_STORAGE_KEY = 'quizletData';
+const LAST_SEARCH_KEY = 'lastSearchKey';
+const AUTO_NEXT_ENABLED = 'autoNextEnabled';
 
 // DOM Elements
 let titleElement;
@@ -13,6 +15,9 @@ let addStorageKeyButton;
 let downloadButton;
 let questionCountElement;
 let deleteStorageKeyButton;
+let searchKeyInput;
+let autoNextCheckbox;
+let searchSection;
 
 // Initialize DOM elements
 function initializeElements() {
@@ -25,6 +30,9 @@ function initializeElements() {
     downloadButton = document.getElementById('downloadButton');
     questionCountElement = document.getElementById('questionCount');
     deleteStorageKeyButton = document.getElementById('deleteStorageKey');
+    searchKeyInput = document.getElementById('searchKey');
+    autoNextCheckbox = document.getElementById('autoNextCheckbox');
+    searchSection = document.querySelector('.search-section');
 }
 
 // Storage Management Functions
@@ -95,16 +103,25 @@ async function checkQuestionExists() {
             const existingData = result[storageKey] || {};
             
             const exists = response.hash in existingData;
-            crawlButton.disabled = exists;
-            buttonText.textContent = exists ? 'Already Crawled' : 'Crawl';
+            if (exists) {
+                buttonText.textContent = autoNextCheckbox.checked ? 'Next' : 'Already Crawled';
+                crawlButton.disabled = !autoNextCheckbox.checked;
+                titleElement.textContent = titleElement.textContent.replace(' (Already Crawled)', '') + ' (Already Crawled)';
+            } else {
+                buttonText.textContent = autoNextCheckbox.checked ? 'Crawl & Next' : 'Crawl';
+                crawlButton.disabled = false;
+                titleElement.textContent = titleElement.textContent.replace(' (Already Crawled)', '');
+            }
         } else {
             crawlButton.disabled = true;
             buttonText.textContent = 'No Question';
+            titleElement.textContent = titleElement.textContent.replace(' (Already Crawled)', '');
         }
     } catch (error) {
         console.error('Error checking question existence:', error);
         crawlButton.disabled = true;
         buttonText.textContent = 'Error';
+        titleElement.textContent = titleElement.textContent.replace(' (Already Crawled)', '');
     }
 }
 
@@ -137,37 +154,74 @@ async function updateQuestionCount() {
     }
 }
 
+// Load auto-next setting
+async function loadAutoNextSetting() {
+    try {
+        const result = await chrome.storage.local.get(AUTO_NEXT_ENABLED);
+        const enabled = result[AUTO_NEXT_ENABLED] || false;
+        autoNextCheckbox.checked = enabled;
+        searchSection.style.display = enabled ? 'block' : 'none';
+    } catch (error) {
+        console.error('Error loading auto-next setting:', error);
+    }
+}
+
+// Save auto-next setting
+async function saveAutoNextSetting(enabled) {
+    try {
+        await chrome.storage.local.set({ [AUTO_NEXT_ENABLED]: enabled });
+        searchSection.style.display = enabled ? 'block' : 'none';
+    } catch (error) {
+        console.error('Error saving auto-next setting:', error);
+    }
+}
+
 // Event Handlers
 async function handleCrawlButtonClick() {
-    buttonText.textContent = 'Crawling...';
-    crawlButton.disabled = true;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const response = await chrome.tabs.sendMessage(tab.id, { action: 'getTempData' });
+    
+    if (!response) return;
 
-    try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        const response = await chrome.tabs.sendMessage(tab.id, { action: 'getTempData' });
+    const storageKey = storageKeySelect.value;
+    const result = await chrome.storage.local.get(storageKey);
+    const existingData = result[storageKey] || {};
+    const exists = response.hash in existingData;
 
-        if (response) {
-            const storageKey = storageKeySelect.value;
-            const result = await chrome.storage.local.get(storageKey);
-            const existingData = result[storageKey] || {};
+    if (!exists) {
+        buttonText.textContent = 'Crawling...';
+        crawlButton.disabled = true;
 
-            if (!(response.hash in existingData)) {
-                existingData[response.hash] = {
-                    question: response.question,
-                    answer: response.answer
-                };
-                await chrome.storage.local.set({ [storageKey]: existingData });
-                await updateQuestionCount();
-                buttonText.textContent = 'Crawl Done';
-            } else {
-                buttonText.textContent = 'Already Crawled';
-            }
-            crawlButton.disabled = true;
+        try {
+            existingData[response.hash] = {
+                question: response.question,
+                answer: response.answer
+            };
+            await chrome.storage.local.set({ [storageKey]: existingData });
+            await updateQuestionCount();
+            buttonText.textContent = autoNextCheckbox.checked ? 'Next' : 'Crawl Done';
+            crawlButton.disabled = autoNextCheckbox.checked ? false : true;
+        } catch (error) {
+            console.error('Error:', error);
+            buttonText.textContent = 'Error! Try Again';
+            crawlButton.disabled = false;
+            return;
         }
-    } catch (error) {
-        console.error('Error:', error);
-        buttonText.textContent = 'Error! Try Again';
-        crawlButton.disabled = false;
+    }
+
+    // If auto-next is enabled or question already exists, perform next action
+    if (autoNextCheckbox.checked || exists) {
+        const searchKey = searchKeyInput.value.trim();
+        if (searchKey) {
+            try {
+                await chrome.tabs.sendMessage(tab.id, { 
+                    action: 'nextQuestion',
+                    searchKey: searchKey
+                });
+            } catch (error) {
+                console.error('Error performing next action:', error);
+            }
+        }
     }
 }
 
@@ -233,6 +287,64 @@ async function deleteStorageKey() {
     }
 }
 
+// Load last search key
+async function loadLastSearchKey() {
+    try {
+        const result = await chrome.storage.local.get(LAST_SEARCH_KEY);
+        if (result[LAST_SEARCH_KEY]) {
+            searchKeyInput.value = result[LAST_SEARCH_KEY];
+        }
+    } catch (error) {
+        console.error('Error loading last search key:', error);
+    }
+}
+
+// Save search key
+async function saveSearchKey(key) {
+    try {
+        await chrome.storage.local.set({ [LAST_SEARCH_KEY]: key });
+    } catch (error) {
+        console.error('Error saving search key:', error);
+    }
+}
+
+// Next Function
+async function handleNextButtonClick() {
+    console.log('Next button clicked');
+    const searchKey = searchKeyInput.value.trim();
+    console.log('Search key:', searchKey);
+    
+    if (searchKey) {
+        await saveSearchKey(searchKey);
+    }
+    
+    try {
+        console.log('Querying active tab');
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        console.log('Active tab:', tab);
+
+        // Inject content script if not already injected
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ['src/js/content.js']
+            });
+            console.log('Content script injected');
+        } catch (error) {
+            console.log('Content script might already be injected:', error);
+        }
+        
+        console.log('Sending message to content script');
+        await chrome.tabs.sendMessage(tab.id, { 
+            action: 'nextQuestion',
+            searchKey: searchKey
+        });
+        console.log('Message sent successfully');
+    } catch (error) {
+        console.error('Error going to next question:', error);
+    }
+}
+
 // Event Listeners Setup
 function setupEventListeners() {
     storageKeySelect.addEventListener('change', async () => {
@@ -247,29 +359,24 @@ function setupEventListeners() {
     });
 
     deleteStorageKeyButton.addEventListener('click', deleteStorageKey);
-
     crawlButton.addEventListener('click', handleCrawlButtonClick);
     downloadButton.addEventListener('click', handleDownloadButtonClick);
+    
+    autoNextCheckbox.addEventListener('change', async (e) => {
+        await saveAutoNextSetting(e.target.checked);
+        await checkQuestionExists(); // Update button text when checkbox changes
+    });
 }
 
-// Initialize Application
+// Initialize app
 async function initializeApp() {
     initializeElements();
     setupEventListeners();
     await loadStorageKeys();
+    await loadLastSearchKey();
+    await loadAutoNextSetting();
     await getCurrentQuestion();
-
-    try {
-        const result = await chrome.storage.local.get('tempQuizletData');
-        const tempQuizletData = result.tempQuizletData;
-        
-        if (tempQuizletData && tempQuizletData.discussionText) {
-            titleElement.textContent = tempQuizletData.discussionText;
-        }
-    } catch (error) {
-        console.error('Error getting data from storage:', error);
-    }
 }
 
-// Start the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeApp); 
+// Start the app
+initializeApp(); 

@@ -17,7 +17,7 @@
         }
 
         .title {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: normal;
             margin-bottom: 6px;
             word-wrap: break-word;
@@ -152,6 +152,39 @@
         .footer a:hover {
             text-decoration: underline;
         }
+
+        .search-section {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .search-section input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .auto-next-section {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            max-width: fit-content;
+            gap: 5px;
+        }
+
+        .auto-next-section input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .auto-next-section input[type="checkbox"]:checked {
+            accent-color: #2196F3;
+        }
+
+        .auto-next-section label {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -174,6 +207,15 @@
                 <span class="button-text">Crawl</span>
             </button>
             <button id="downloadButton">Download (<span id="questionCount">0</span>)</button>
+        </div>
+
+        <div class="auto-next-section">
+            <input type="checkbox" id="autoNextCheckbox">
+            <label for="autoNextCheckbox">Auto next after crawl</label>
+        </div>
+
+        <div class="search-section" style="display: none;">
+            <input type="text" id="searchKey" placeholder="Enter search key">
         </div>
 
         <div class="footer">
