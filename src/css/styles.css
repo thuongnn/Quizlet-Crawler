@@ -1,0 +1,8 @@
+/* CSS để ẩn popup */
+#notRemoverPopup {
+    display: none !important;
+}
+
+.show {
+    display: none !important;
+} 

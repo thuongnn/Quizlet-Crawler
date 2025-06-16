@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quizlet Crawler</title>
+    <style>
+        body {
+            width: 250px;
+            padding: 12px;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: normal;
+            margin-bottom: 6px;
+            word-wrap: break-word;
+            line-height: 1.4;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .storage-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .storage-select-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .storage-input-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        select, input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        select {
+            flex: 1;
+        }
+
+        input {
+            flex: 1;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.3s;
+            min-width: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .button-text {
+            font-weight: 500;
+        }
+
+        .question-section {
+            padding: 4px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        .current-question {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+            word-wrap: break-word;
+        }
+
+        .stats {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+        }
+
+        #downloadButton {
+            background-color: #2196F3;
+        }
+
+        #downloadButton:hover {
+            background-color: #1976D2;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        #addStorageKey, #deleteStorageKey {
+            padding: 5px;
+            min-width: 32px;
+        }
+
+        .footer {
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #2196F3;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title" id="title">No question selected</div>
+        
+        <div class="storage-section">
+            <div class="storage-select-group">
+                <select id="storageKey"></select>
+                <button id="deleteStorageKey" class="delete-btn" title="Delete storage key">×</button>
+            </div>
+            <div class="storage-input-group">
+                <input type="text" id="newStorageKey" placeholder="New storage key">
+                <button id="addStorageKey" title="Add new storage key">+</button>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="crawlButton">
+                <span class="button-text">Crawl</span>
+            </button>
+            <button id="downloadButton">Download (<span id="questionCount">0</span>)</button>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 Quizlet Crawler Developed by <a href="https://github.com/thuongnn" target="_blank">thuongnn</a></p>
+        </div>
+    </div>
+    <script src="js/popup.js"></script>
+</body>
+</html> 

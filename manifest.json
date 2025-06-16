@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Quizlet Crawler",
+  "version": "1.0",
+  "description": "Crawl Quizlet questions and download them",
+  "permissions": ["storage", "tabs", "scripting"],
+  "host_permissions": ["*://*.examtopics.com/*"],
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "48": "src/assets/icon.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/js/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.examtopics.com/*"],
+      "js": ["src/js/content.js"],
+      "css": ["src/css/styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "48": "src/assets/icon.png"
+  }
+} 
