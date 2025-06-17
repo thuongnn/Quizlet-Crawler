@@ -54,7 +54,19 @@ function extractQuizletData() {
         return null;
     }
 
-    const question = questionElement.innerText.trim();
+    let question = '';
+    for (const child of questionElement.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE) {
+            question += child.textContent;
+        } else if (child.nodeName === 'BR') {
+            question += '\n';
+        } else if (child.nodeName === 'IMG') {
+            question += child.outerHTML;
+        } else {
+            question += child.innerHTML;
+        }
+    }
+    question = question.trim();
     const answers = extractAnswers();
     const correctAnswers = extractCorrectAnswers();
 
@@ -68,7 +80,22 @@ function extractAnswers() {
     const answerElements = document.querySelectorAll(SELECTORS.MULTI_CHOICE_ITEM);
     return Array.from(answerElements).map((element) => {
         const letter = element.querySelector(SELECTORS.MULTI_CHOICE_LETTER).getAttribute('data-choice-letter');
-        let text = element.innerText.replace(`${letter}.`, '').trim();
+        let text = '';
+        
+        // Skip the letter element and process remaining content
+        for (const child of element.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) {
+                text += child.textContent;
+            } else if (child.nodeName === 'BR') {
+                text += '\n';
+            } else if (child.nodeName === 'IMG') {
+                text += child.outerHTML;
+            } else {
+                text += child.innerHTML;
+            }
+        }
+        
+        text = text.replace(`${letter}.`, '').trim();
         text = text.replace('Most Voted', '').trim();
         return `${letter}. ${text}`;
     });
